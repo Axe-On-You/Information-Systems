@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   pg:
     image: postgres:15-alpine
     container_name: is_postgres
     environment:
-      POSTGRES_DB: \${DB_NAME:-studs}
-      POSTGRES_USER: \${DB_USER}
-      POSTGRES_PASSWORD: \${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-studs}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -21,9 +19,9 @@ services:
       - "8080:8080"
       - "9990:9990"
     environment:
-      DB_URL: \${DB_URL:-jdbc:postgresql://pg:5432/studs}
-      DB_USER: \${DB_USER}
-      DB_PASSWORD: \${DB_PASSWORD}
+      DB_URL: ${DB_URL:-jdbc:postgresql://pg:5432/studs}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./target/study-group-service-1.0-SNAPSHOT.war:/opt/jboss/wildfly/standalone/deployments/ROOT.war
     depends_on:

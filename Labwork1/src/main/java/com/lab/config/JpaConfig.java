@@ -20,9 +20,14 @@ public class JpaConfig {
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl("jdbc:postgresql://pg:5432/studs");
-        dataSource.setUsername("s466730");
-        dataSource.setPassword("bZNj3ZzqarPF7YEW");
+
+        String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/studs";
+        String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "postgres";
+        String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "postgres";
+
+        dataSource.setUrl(dbUrl);
+        dataSource.setUsername(dbUser);
+        dataSource.setPassword(dbPassword);
         return dataSource;
     }
 
@@ -38,8 +43,7 @@ public class JpaConfig {
         Properties properties = new Properties();
         properties.setProperty("eclipselink.ddl-generation", "create-or-extend-tables");
         properties.setProperty("eclipselink.weaving", "false");
-        properties.setProperty("eclipselink.logging.level.sql", "FINE");
-        properties.setProperty("eclipselink.logging.parameters", "true");
+        properties.setProperty("eclipselink.logging.level.sql", "INFO");
         em.setJpaProperties(properties);
 
         return em;

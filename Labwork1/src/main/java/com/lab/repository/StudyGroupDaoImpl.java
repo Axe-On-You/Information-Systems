@@ -45,6 +45,9 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
 
     @Override
     public List<StudyGroup> findAll(Map<String, Object> filters, int page, int size, String sortBy, boolean asc) {
+        if (size > 100) size = 100;
+        if (page < 1) page = 1;
+
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<StudyGroup> query = cb.createQuery(StudyGroup.class);
         Root<StudyGroup> root = query.from(StudyGroup.class);
@@ -56,11 +59,8 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
 
         if (sortBy != null && !sortBy.trim().isEmpty()) {
             Path<?> sortPath = getPath(root, sortBy);
-            if (asc) {
-                query.orderBy(cb.asc(sortPath));
-            } else {
-                query.orderBy(cb.desc(sortPath));
-            }
+            if (asc) query.orderBy(cb.asc(sortPath));
+            else query.orderBy(cb.desc(sortPath));
         } else {
             query.orderBy(cb.asc(root.get("id")));
         }
@@ -134,7 +134,7 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
                         Class<?> type = path.getJavaType();
 
                         if (type == String.class) {
-                            predicates.add(cb.equal(cb.upper(path.as(String.class)), valueStr.toUpperCase()));
+                            predicates.add(cb.equal(path.as(String.class), valueStr));
                         } else if (type == Long.class || type == long.class) {
                             predicates.add(cb.equal(path, Long.valueOf(valueStr)));
                         } else if (type == Integer.class || type == int.class) {
@@ -146,8 +146,8 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
                             Enum<?> enumValue = Enum.valueOf((Class<Enum>) type, valueStr);
                             predicates.add(cb.equal(path, enumValue));
                         }
-                    } catch (Exception ignored) {
-
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Неверный формат фильтра для поля " + key);
                     }
                 }
             }

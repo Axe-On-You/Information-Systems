@@ -1,6 +1,7 @@
 package com.lab.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -12,14 +13,18 @@ public class StudyGroup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Positive(message = "ID must be greater than 0")
     @Column(name = "id", nullable = false, unique = true)
     private Long id;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
 
     @NotBlank(message = "Name cannot be null or empty")
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Valid
     @NotNull(message = "Coordinates cannot be null")
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "coordinates_id", nullable = false)
@@ -29,16 +34,16 @@ public class StudyGroup {
     private LocalDateTime creationDate;
 
     @Positive(message = "Students count must be greater than 0")
-    @Column(name = "students_count")
+    @Column(name = "students_count", columnDefinition = "BIGINT CHECK (students_count > 0)")
     private Long studentsCount;
 
     @NotNull(message = "Expelled students cannot be null")
     @Positive(message = "Expelled students must be greater than 0")
-    @Column(name = "expelled_students", nullable = false)
+    @Column(name = "expelled_students", nullable = false, columnDefinition = "BIGINT CHECK (expelled_students > 0)")
     private Long expelledStudents;
 
     @Positive(message = "Transferred students must be greater than 0")
-    @Column(name = "transferred_students")
+    @Column(name = "transferred_students", columnDefinition = "INTEGER CHECK (transferred_students > 0)")
     private Integer transferredStudents;
 
     @Enumerated(EnumType.STRING)
@@ -47,19 +52,20 @@ public class StudyGroup {
 
     @NotNull(message = "Should be expelled cannot be null")
     @Positive(message = "Should be expelled must be greater than 0")
-    @Column(name = "should_be_expelled", nullable = false)
+    @Column(name = "should_be_expelled", nullable = false, columnDefinition = "INTEGER CHECK (should_be_expelled > 0)")
     private Integer shouldBeExpelled;
 
     @NotNull(message = "Average mark cannot be null")
     @Positive(message = "Average mark must be greater than 0")
-    @Column(name = "average_mark", nullable = false)
+    @Column(name = "average_mark", nullable = false, columnDefinition = "BIGINT CHECK (average_mark > 0)")
     private Long averageMark;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "semester_enum")
     private Semester semesterEnum;
 
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @Valid
+    @ManyToOne
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin;
 

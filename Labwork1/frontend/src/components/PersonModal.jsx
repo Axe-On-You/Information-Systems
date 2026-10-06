@@ -67,9 +67,9 @@ const PersonModal = ({ open, onClose }) => {
         const locationName = formData.locationName.trim();
         const locationFilled = locationX !== '' || locationY !== '' || locationName !== '';
 
-        if (locationFilled && (locationX === '' || locationY === '' || locationName === '')) {
+        if (locationFilled && (locationX === '' || locationY === '')) {
             dispatch(showNotification({
-                message: 'Если указана локация, необходимо заполнить X, Y и название',
+                message: 'Если указана локация, необходимо заполнить X и Y',
                 severity: 'error'
             }));
             return;

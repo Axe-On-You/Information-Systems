@@ -1,29 +1,30 @@
 version: '3.8'
 
 services:
-  # Поднимаем локальный PostgreSQL (имя сервиса pg, поэтому бэкенд его найдет)
   pg:
     image: postgres:15-alpine
     container_name: is_postgres
     environment:
-      POSTGRES_DB: studs
-      POSTGRES_USER: s466730
-      POSTGRES_PASSWORD: bZNj3ZzqarPF7YEW
+      POSTGRES_DB: \${DB_NAME:-studs}
+      POSTGRES_USER: \${DB_USER}
+      POSTGRES_PASSWORD: \${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  # Поднимаем WildFly и сразу прокидываем в него наш скомпилированный war
   wildfly:
     image: quay.io/wildfly/wildfly:latest
     container_name: is_wildfly
     ports:
       - "8080:8080"
       - "9990:9990"
+    environment:
+      DB_URL: \${DB_URL:-jdbc:postgresql://pg:5432/studs}
+      DB_USER: \${DB_USER}
+      DB_PASSWORD: \${DB_PASSWORD}
     volumes:
-      # Прокидываем собранный файл прямо в папку деплоя сервера
       - ./target/study-group-service-1.0-SNAPSHOT.war:/opt/jboss/wildfly/standalone/deployments/ROOT.war
     depends_on:
       - pg

@@ -21,7 +21,11 @@ public class StudyGroup {
     private Integer version;
 
     @NotBlank(message = "Name cannot be null or empty")
-    @Column(name = "name", nullable = false)
+    @Column(
+            name = "name",
+            nullable = false,
+            columnDefinition = "VARCHAR(255) CHECK (btrim(name) <> '')"
+    )
     private String name;
 
     @Valid
@@ -30,20 +34,35 @@ public class StudyGroup {
     @JoinColumn(name = "coordinates_id", nullable = false)
     private Coordinates coordinates;
 
-    @Column(name = "creation_date", nullable = false, updatable = false)
+    @Column(
+            name = "creation_date",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    )
     private LocalDateTime creationDate;
 
     @Positive(message = "Students count must be greater than 0")
-    @Column(name = "students_count", columnDefinition = "BIGINT CHECK (students_count > 0)")
+    @Column(
+            name = "students_count",
+            columnDefinition = "BIGINT CHECK (students_count > 0)"
+    )
     private Long studentsCount;
 
     @NotNull(message = "Expelled students cannot be null")
     @Positive(message = "Expelled students must be greater than 0")
-    @Column(name = "expelled_students", nullable = false, columnDefinition = "BIGINT CHECK (expelled_students > 0)")
+    @Column(
+            name = "expelled_students",
+            nullable = false,
+            columnDefinition = "BIGINT CHECK (expelled_students > 0)"
+    )
     private Long expelledStudents;
 
     @Positive(message = "Transferred students must be greater than 0")
-    @Column(name = "transferred_students", columnDefinition = "INTEGER CHECK (transferred_students > 0)")
+    @Column(
+            name = "transferred_students",
+            columnDefinition = "INTEGER CHECK (transferred_students > 0)"
+    )
     private Integer transferredStudents;
 
     @Enumerated(EnumType.STRING)
@@ -52,19 +71,26 @@ public class StudyGroup {
 
     @NotNull(message = "Should be expelled cannot be null")
     @Positive(message = "Should be expelled must be greater than 0")
-    @Column(name = "should_be_expelled", nullable = false, columnDefinition = "INTEGER CHECK (should_be_expelled > 0)")
+    @Column(
+            name = "should_be_expelled",
+            nullable = false,
+            columnDefinition = "INTEGER CHECK (should_be_expelled > 0)"
+    )
     private Integer shouldBeExpelled;
 
     @NotNull(message = "Average mark cannot be null")
     @Positive(message = "Average mark must be greater than 0")
-    @Column(name = "average_mark", nullable = false, columnDefinition = "BIGINT CHECK (average_mark > 0)")
+    @Column(
+            name = "average_mark",
+            nullable = false,
+            columnDefinition = "BIGINT CHECK (average_mark > 0)"
+    )
     private Long averageMark;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "semester_enum")
     private Semester semesterEnum;
 
-    @Valid
     @ManyToOne
     @JoinColumn(name = "group_admin_id")
     private Person groupAdmin;
@@ -73,7 +99,9 @@ public class StudyGroup {
 
     @PrePersist
     protected void onCreate() {
-        this.creationDate = LocalDateTime.now();
+        if (creationDate == null) {
+            creationDate = LocalDateTime.now();
+        }
     }
 
     public Long getId() { return id; }

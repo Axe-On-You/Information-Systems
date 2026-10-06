@@ -1,6 +1,5 @@
 package com.lab.repository;
 
-import com.lab.model.Person;
 import com.lab.model.StudyGroup;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -73,6 +72,14 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
     }
 
     @Override
+    public List<StudyGroup> findAll() {
+        return em.createQuery(
+                "SELECT s FROM StudyGroup s ORDER BY s.id",
+                StudyGroup.class
+        ).getResultList();
+    }
+
+    @Override
     public long count(Map<String, Object> filters) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -102,23 +109,6 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
         return em.createQuery(jpql, Long.class)
                 .setParameter("value", value)
                 .getSingleResult();
-    }
-
-    @Override
-    public List<StudyGroup> findByGroupAdminLessThan(Long personId) {
-        Person admin = em.find(Person.class, personId);
-        if (admin == null) return new ArrayList<>();
-
-        String jpql = "SELECT s FROM StudyGroup s WHERE s.groupAdmin IS NOT NULL";
-        List<StudyGroup> groups = em.createQuery(jpql, StudyGroup.class).getResultList();
-
-        List<StudyGroup> result = new ArrayList<>();
-        for (StudyGroup group : groups) {
-            if (group.getGroupAdmin().compareTo(admin) < 0) {
-                result.add(group);
-            }
-        }
-        return result;
     }
 
     private Predicate[] buildPredicates(Map<String, Object> filters, CriteriaBuilder cb, Root<StudyGroup> root) {

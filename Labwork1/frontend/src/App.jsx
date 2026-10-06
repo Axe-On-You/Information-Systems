@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Container, CssBaseline, Snackbar, Alert } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import { hideNotification } from './store/groupSlice';
+import { fetchGroups, fetchPersons, hideNotification } from './store/groupSlice';
 import Header from './components/Header';
 import GroupTable from './components/GroupTable';
 import GroupModal from './components/GroupModal';
@@ -17,6 +17,22 @@ function App() {
     const [personModalOpen, setPersonModalOpen] = useState(false);
     const [personListModalOpen, setPersonListModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState(null);
+
+    useEffect(() => {
+        const eventSource = new EventSource('http://localhost:8080/api/stream');
+
+        const handleUpdate = () => {
+            dispatch(fetchGroups());
+            dispatch(fetchPersons());
+        };
+
+        eventSource.addEventListener('update', handleUpdate);
+
+        return () => {
+            eventSource.removeEventListener('update', handleUpdate);
+            eventSource.close();
+        };
+    }, [dispatch]);
 
     const handleOpenGroup = (groupData = null) => {
         setEditingGroup(groupData);
@@ -58,7 +74,12 @@ function App() {
                 onClose={() => dispatch(hideNotification())}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert onClose={() => dispatch(hideNotification())} severity={notification.severity} variant="filled" sx={{ width: '100%' }}>
+                <Alert
+                    onClose={() => dispatch(hideNotification())}
+                    severity={notification.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
                     {notification.message}
                 </Alert>
             </Snackbar>

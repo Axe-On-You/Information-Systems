@@ -17,6 +17,17 @@ const emptyForm = {
     adminId: ''
 };
 
+const positiveFields = [
+    ['expelledStudents', 'Количество отчисленных студентов'],
+    ['shouldBeExpelled', 'Количество студентов к отчислению'],
+    ['averageMark', 'Средняя оценка']
+];
+
+const optionalPositiveFields = [
+    ['studentsCount', 'Количество студентов'],
+    ['transferredStudents', 'Количество переведённых студентов']
+];
+
 const GroupModal = ({ open, onClose, editData }) => {
     const dispatch = useDispatch();
     const persons = useSelector(state => state.groups.persons);
@@ -47,11 +58,42 @@ const GroupModal = ({ open, onClose, editData }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const invalidPositive = [...positiveFields, ...optionalPositiveFields]
+            .map(([field, label]) => {
+                const value = formData[field];
+                return value !== '' && (!Number.isFinite(Number(value)) || Number(value) <= 0) ? label : null;
+            })
+            .filter(Boolean);
+
+        if (invalidPositive.length > 0) {
+            dispatch(showNotification({
+                message: 'Поля должны быть больше 0: ' + invalidPositive.join(', '),
+                severity: 'error'
+            }));
+            return;
+        }
+
+        if (!formData.name.trim()) {
+            dispatch(showNotification({
+                message: 'Название группы не может быть пустым',
+                severity: 'error'
+            }));
+            return;
+        }
+
+        if (formData.coordinates.x === '' || formData.coordinates.y === '') {
+            dispatch(showNotification({
+                message: 'Координаты X и Y обязательны',
+                severity: 'error'
+            }));
+            return;
+        }
+
         const payload = {
             name: formData.name,
             coordinates: {
-                x: formData.coordinates.x !== '' ? Number(formData.coordinates.x) : null,
-                y: formData.coordinates.y !== '' ? Number(formData.coordinates.y) : null
+                x: Number(formData.coordinates.x),
+                y: Number(formData.coordinates.y)
             },
             studentsCount: formData.studentsCount !== '' ? Number(formData.studentsCount) : null,
             expelledStudents: formData.expelledStudents !== '' ? Number(formData.expelledStudents) : null,
@@ -60,12 +102,14 @@ const GroupModal = ({ open, onClose, editData }) => {
             shouldBeExpelled: formData.shouldBeExpelled !== '' ? Number(formData.shouldBeExpelled) : null,
             averageMark: formData.averageMark !== '' ? Number(formData.averageMark) : null,
             semesterEnum: formData.semesterEnum || null,
-            groupAdmin: formData.adminId ? persons.find(p => p.id === formData.adminId) : null
+            groupAdmin: formData.adminId
+                ? persons.find(person => String(person.id) === String(formData.adminId)) || null
+                : null
         };
 
         try {
             if (editData) {
-                await api.put(`/study-groups/${editData.id}`, payload);
+                await api.put('/study-groups/' + editData.id, payload);
                 dispatch(showNotification({ message: 'Группа успешно обновлена', severity: 'success' }));
             } else {
                 await api.post('/study-groups', payload);
@@ -74,13 +118,19 @@ const GroupModal = ({ open, onClose, editData }) => {
             dispatch(fetchGroups());
             onClose();
         } catch (error) {
-            if (error.response && error.response.data) {
+            if (error.response?.data) {
                 const errorMessages = Object.entries(error.response.data)
-                    .map(([field, msg]) => `${field}: ${msg}`)
+                    .map(([field, msg]) => field + ': ' + msg)
                     .join(' | ');
-                dispatch(showNotification({ message: `Ошибки: ${errorMessages}`, severity: 'error' }));
+                dispatch(showNotification({
+                    message: 'Ошибка: ' + errorMessages,
+                    severity: 'error'
+                }));
             } else {
-                dispatch(showNotification({ message: 'Ошибка сервера', severity: 'error' }));
+                dispatch(showNotification({
+                    message: 'Ошибка сервера',
+                    severity: 'error'
+                }));
             }
         }
     };
@@ -96,7 +146,6 @@ const GroupModal = ({ open, onClose, editData }) => {
                     <TextField label="Количество студентов" type="number" value={formData.studentsCount} onChange={e => setFormData({...formData, studentsCount: e.target.value})} />
                     <TextField label="Отчисленные студенты (>0)" type="number" required value={formData.expelledStudents} onChange={e => setFormData({...formData, expelledStudents: e.target.value})} />
                     <TextField label="Переведенные студенты" type="number" value={formData.transferredStudents} onChange={e => setFormData({...formData, transferredStudents: e.target.value})} />
-
                     <FormControl>
                         <InputLabel>Форма обучения</InputLabel>
                         <Select value={formData.formOfEducation} label="Форма обучения" onChange={e => setFormData({...formData, formOfEducation: e.target.value})}>
@@ -106,10 +155,8 @@ const GroupModal = ({ open, onClose, editData }) => {
                             <MenuItem value="EVENING_CLASSES">EVENING_CLASSES</MenuItem>
                         </Select>
                     </FormControl>
-
                     <TextField label="Студенты к отчислению (>0)" type="number" required value={formData.shouldBeExpelled} onChange={e => setFormData({...formData, shouldBeExpelled: e.target.value})} />
                     <TextField label="Средний балл (>0)" type="number" required value={formData.averageMark} onChange={e => setFormData({...formData, averageMark: e.target.value})} />
-
                     <FormControl>
                         <InputLabel>Семестр</InputLabel>
                         <Select value={formData.semesterEnum} label="Семестр" onChange={e => setFormData({...formData, semesterEnum: e.target.value})}>
@@ -119,13 +166,14 @@ const GroupModal = ({ open, onClose, editData }) => {
                             <MenuItem value="EIGHTH">EIGHTH</MenuItem>
                         </Select>
                     </FormControl>
-
                     <FormControl>
                         <InputLabel>Администратор</InputLabel>
                         <Select value={formData.adminId} label="Администратор" onChange={e => setFormData({...formData, adminId: e.target.value})}>
                             <MenuItem value=""><em>Нет</em></MenuItem>
-                            {persons.map(p => (
-                                <MenuItem key={p.id} value={p.id}>{p.name} (ID: {p.id})</MenuItem>
+                            {persons.map(person => (
+                                <MenuItem key={person.id} value={person.id}>
+                                    {person.name} (ID: {person.id})
+                                </MenuItem>
                             ))}
                         </Select>
                     </FormControl>

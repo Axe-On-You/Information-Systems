@@ -3,7 +3,6 @@ package com.lab.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.jspecify.annotations.NonNull;
 
 import java.time.LocalDate;
 
@@ -16,7 +15,11 @@ public class Person implements Comparable<Person> {
     private Long id;
 
     @NotBlank(message = "Person name cannot be null or empty")
-    @Column(name = "name", nullable = false)
+    @Column(
+            name = "name",
+            nullable = false,
+            columnDefinition = "VARCHAR(255) CHECK (btrim(name) <> '')"
+    )
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -42,9 +45,8 @@ public class Person implements Comparable<Person> {
 
     public Person() {}
 
-    // Логика сравнения для реализации операции "вернуть массив объектов, значение groupAdmin которых меньше заданного"
     @Override
-    public int compareTo(@NonNull Person other) {
+    public int compareTo(Person other) {
         int nameComparison = this.name.compareTo(other.name);
         if (nameComparison != 0) {
             return nameComparison;
@@ -71,5 +73,4 @@ public class Person implements Comparable<Person> {
     public void setBirthday(LocalDate birthday) { this.birthday = birthday; }
 
     public Country getNationality() { return nationality; }
-    public void setNationality(Country nationality) { this.nationality = nationality; }
 }

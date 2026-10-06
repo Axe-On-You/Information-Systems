@@ -23,10 +23,6 @@ public class StudyGroup {
     )
     private Long id;
 
-    @Version
-    @Column(name = "version")
-    private Integer version;
-
     @NotBlank(message = "Name cannot be null or empty")
     @Column(
             name = "name",

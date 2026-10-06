@@ -43,9 +43,19 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
     }
 
     @Override
-    public List<StudyGroup> findAll(Map<String, Object> filters, int page, int size, String sortBy, boolean asc) {
-        if (size > 100) size = 100;
-        if (page < 1) page = 1;
+    public List<StudyGroup> findAll(
+            Map<String, Object> filters,
+            int page,
+            int size,
+            String sortBy,
+            boolean asc
+    ) {
+        if (size > 100) {
+            size = 100;
+        }
+        if (page < 1) {
+            page = 1;
+        }
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<StudyGroup> query = cb.createQuery(StudyGroup.class);
@@ -58,8 +68,11 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
 
         if (sortBy != null && !sortBy.trim().isEmpty()) {
             Path<?> sortPath = getPath(root, sortBy);
-            if (asc) query.orderBy(cb.asc(sortPath));
-            else query.orderBy(cb.desc(sortPath));
+            if (asc) {
+                query.orderBy(cb.asc(sortPath));
+            } else {
+                query.orderBy(cb.desc(sortPath));
+            }
         } else {
             query.orderBy(cb.asc(root.get("id")));
         }
@@ -95,28 +108,19 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
         return em.createQuery(query).getSingleResult();
     }
 
-    @Override
-    public long countByGroupAdminId(Long personId) {
-        String jpql = "SELECT COUNT(s) FROM StudyGroup s WHERE s.groupAdmin.id = :personId";
-        return em.createQuery(jpql, Long.class)
-                .setParameter("personId", personId)
-                .getSingleResult();
-    }
-
-    @Override
-    public long countByShouldBeExpelledGreaterThan(int value) {
-        String jpql = "SELECT COUNT(s) FROM StudyGroup s WHERE s.shouldBeExpelled > :value";
-        return em.createQuery(jpql, Long.class)
-                .setParameter("value", value)
-                .getSingleResult();
-    }
-
-    private Predicate[] buildPredicates(Map<String, Object> filters, CriteriaBuilder cb, Root<StudyGroup> root) {
+    private Predicate[] buildPredicates(
+            Map<String, Object> filters,
+            CriteriaBuilder cb,
+            Root<StudyGroup> root
+    ) {
         List<Predicate> predicates = new ArrayList<>();
+
         if (filters != null && !filters.isEmpty()) {
             for (Map.Entry<String, Object> entry : filters.entrySet()) {
                 String key = entry.getKey();
-                String valueStr = entry.getValue() != null ? entry.getValue().toString() : "";
+                String valueStr = entry.getValue() != null
+                        ? entry.getValue().toString()
+                        : "";
 
                 if (!valueStr.trim().isEmpty()) {
                     try {
@@ -125,23 +129,20 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
 
                         if (type == String.class) {
                             predicates.add(cb.equal(path.as(String.class), valueStr));
-                        } else if (type == Long.class || type == long.class) {
-                            predicates.add(cb.equal(path, Long.valueOf(valueStr)));
-                        } else if (type == Integer.class || type == int.class) {
-                            predicates.add(cb.equal(path, Integer.valueOf(valueStr)));
-                        } else if (type == Double.class || type == double.class) {
-                            predicates.add(cb.equal(path, Double.valueOf(valueStr)));
                         } else if (Enum.class.isAssignableFrom(type)) {
                             @SuppressWarnings({"unchecked", "rawtypes"})
                             Enum<?> enumValue = Enum.valueOf((Class<Enum>) type, valueStr);
                             predicates.add(cb.equal(path, enumValue));
                         }
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Неверный формат фильтра для поля " + key);
+                        throw new IllegalArgumentException(
+                                "Неверный формат фильтра для поля " + key
+                        );
                     }
                 }
             }
         }
+
         return predicates.toArray(new Predicate[0]);
     }
 
@@ -149,11 +150,14 @@ public class StudyGroupDaoImpl implements StudyGroupDao {
         if (attributePath.contains(".")) {
             String[] parts = attributePath.split("\\.");
             Join<?, ?> join = root.join(parts[0], JoinType.LEFT);
+
             for (int i = 1; i < parts.length - 1; i++) {
                 join = join.join(parts[i], JoinType.LEFT);
             }
+
             return join.get(parts[parts.length - 1]);
         }
+
         return root.get(attributePath);
     }
 }

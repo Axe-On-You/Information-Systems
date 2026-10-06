@@ -63,7 +63,13 @@ public class PersonServiceImpl implements PersonService {
         personDao.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Администратор не найден"));
 
-        if (studyGroupDao.countByGroupAdminId(id) > 0) {
+        boolean linkedToGroup = studyGroupDao.findAll().stream()
+                .anyMatch(group ->
+                        group.getGroupAdmin() != null
+                                && id.equals(group.getGroupAdmin().getId())
+                );
+
+        if (linkedToGroup) {
             throw new IllegalStateException(
                     "Нельзя удалить администратора: он связан с учебной группой"
             );

@@ -111,13 +111,21 @@ public class StudyGroupServiceImpl implements StudyGroupService {
     @Override
     @Transactional(readOnly = true)
     public long countByGroupAdmin(Long personId) {
-        return studyGroupDao.countByGroupAdminId(personId);
+        return studyGroupDao.findAll().stream()
+                .filter(group ->
+                        group.getGroupAdmin() != null
+                                && personId.equals(group.getGroupAdmin().getId())
+                )
+                .count();
     }
 
     @Override
     @Transactional(readOnly = true)
     public long countByShouldBeExpelledGreaterThan(int value) {
-        return studyGroupDao.countByShouldBeExpelledGreaterThan(value);
+        return studyGroupDao.findAll().stream()
+                .filter(group -> group.getShouldBeExpelled() != null
+                        && group.getShouldBeExpelled() > value)
+                .count();
     }
 
     @Override
@@ -130,7 +138,8 @@ public class StudyGroupServiceImpl implements StudyGroupService {
         List<StudyGroup> result = new ArrayList<>();
 
         for (StudyGroup group : groups) {
-            if (group.getGroupAdmin() != null && group.getGroupAdmin().compareTo(admin) < 0) {
+            if (group.getGroupAdmin() != null
+                    && group.getGroupAdmin().compareTo(admin) < 0) {
                 result.add(group);
             }
         }
@@ -168,7 +177,9 @@ public class StudyGroupServiceImpl implements StudyGroupService {
         if (sourceStudents != null) {
             Long targetStudents = targetGroup.getStudentsCount();
             targetGroup.setStudentsCount(
-                    targetStudents == null ? sourceStudents : targetStudents + sourceStudents
+                    targetStudents == null
+                            ? sourceStudents
+                            : targetStudents + sourceStudents
             );
             sourceGroup.setStudentsCount(null);
 

@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,7 +14,13 @@ public class StudyGroup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, unique = true)
+    @Positive(message = "ID must be greater than 0")
+    @Column(
+            name = "id",
+            nullable = false,
+            unique = true,
+            columnDefinition = "BIGINT CHECK (id > 0)"
+    )
     private Long id;
 
     @Version

@@ -21,9 +21,15 @@ public class JpaConfig {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
 
-        String dbUrl = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/studs";
-        String dbUser = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "postgres";
-        String dbPassword = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "postgres";
+        String dbUrl = System.getenv("DB_URL") != null
+                ? System.getenv("DB_URL")
+                : "jdbc:postgresql://localhost:5432/studs";
+        String dbUser = System.getenv("DB_USER") != null
+                ? System.getenv("DB_USER")
+                : "postgres";
+        String dbPassword = System.getenv("DB_PASSWORD") != null
+                ? System.getenv("DB_PASSWORD")
+                : "postgres";
 
         dataSource.setUrl(dbUrl);
         dataSource.setUsername(dbUser);

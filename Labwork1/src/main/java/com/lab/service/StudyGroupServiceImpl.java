@@ -21,7 +21,11 @@ public class StudyGroupServiceImpl implements StudyGroupService {
     private final SseService sseService;
 
     @Autowired
-    public StudyGroupServiceImpl(StudyGroupDao studyGroupDao, PersonDao personDao, SseService sseService) {
+    public StudyGroupServiceImpl(
+            StudyGroupDao studyGroupDao,
+            PersonDao personDao,
+            SseService sseService
+    ) {
         this.studyGroupDao = studyGroupDao;
         this.personDao = personDao;
         this.sseService = sseService;
@@ -35,8 +39,9 @@ public class StudyGroupServiceImpl implements StudyGroupService {
                     .orElseThrow(() -> new EntityNotFoundException("Администратор не найден"));
             studyGroup.setGroupAdmin(admin);
         }
+
         StudyGroup saved = studyGroupDao.save(studyGroup);
-        sseService.notifyClients();
+        sseService.notifyAfterCommit();
         return saved;
     }
 
@@ -66,26 +71,34 @@ public class StudyGroupServiceImpl implements StudyGroupService {
         }
 
         StudyGroup saved = studyGroupDao.update(existing);
-        sseService.notifyClients();
+        sseService.notifyAfterCommit();
         return saved;
     }
 
     @Override
     @Transactional(readOnly = true)
     public StudyGroup findById(Long id) {
-        return studyGroupDao.findById(id).orElseThrow(() -> new EntityNotFoundException("Группа не найдена"));
+        return studyGroupDao.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Группа не найдена"));
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
+        findById(id);
         studyGroupDao.delete(id);
-        sseService.notifyClients();
+        sseService.notifyAfterCommit();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<StudyGroup> findAll(Map<String, Object> filters, int page, int size, String sortBy, boolean asc) {
+    public List<StudyGroup> findAll(
+            Map<String, Object> filters,
+            int page,
+            int size,
+            String sortBy,
+            boolean asc
+    ) {
         return studyGroupDao.findAll(filters, page, size, sortBy, asc);
     }
 
@@ -113,13 +126,15 @@ public class StudyGroupServiceImpl implements StudyGroupService {
         Person admin = personDao.findById(personId)
                 .orElseThrow(() -> new EntityNotFoundException("Администратор не найден"));
 
-        List<StudyGroup> groups = studyGroupDao.findAll(null, 1, 100000, "id", true);
+        List<StudyGroup> groups = studyGroupDao.findAll();
         List<StudyGroup> result = new ArrayList<>();
+
         for (StudyGroup group : groups) {
             if (group.getGroupAdmin() != null && group.getGroupAdmin().compareTo(admin) < 0) {
                 result.add(group);
             }
         }
+
         return result;
     }
 
@@ -128,11 +143,12 @@ public class StudyGroupServiceImpl implements StudyGroupService {
     public void expelAllStudents(Long groupId) {
         StudyGroup group = findById(groupId);
         Long currentStudents = group.getStudentsCount();
+
         if (currentStudents != null) {
             group.setExpelledStudents(group.getExpelledStudents() + currentStudents);
             group.setStudentsCount(null);
             studyGroupDao.update(group);
-            sseService.notifyClients();
+            sseService.notifyAfterCommit();
         }
     }
 
@@ -140,7 +156,9 @@ public class StudyGroupServiceImpl implements StudyGroupService {
     @Transactional
     public void transferStudents(Long sourceGroupId, Long targetGroupId) {
         if (sourceGroupId.equals(targetGroupId)) {
-            throw new IllegalArgumentException("Нельзя перевести студентов в ту же самую группу");
+            throw new IllegalArgumentException(
+                    "Нельзя перевести студентов в ту же самую группу"
+            );
         }
 
         StudyGroup sourceGroup = findById(sourceGroupId);
@@ -149,12 +167,14 @@ public class StudyGroupServiceImpl implements StudyGroupService {
 
         if (sourceStudents != null) {
             Long targetStudents = targetGroup.getStudentsCount();
-            targetGroup.setStudentsCount(targetStudents == null ? sourceStudents : targetStudents + sourceStudents);
+            targetGroup.setStudentsCount(
+                    targetStudents == null ? sourceStudents : targetStudents + sourceStudents
+            );
             sourceGroup.setStudentsCount(null);
 
             studyGroupDao.update(sourceGroup);
             studyGroupDao.update(targetGroup);
-            sseService.notifyClients();
+            sseService.notifyAfterCommit();
         }
     }
 }

@@ -18,9 +18,11 @@ public interface StudyGroupDao {
 
     List<StudyGroup> findAll(Map<String, Object> filters, int page, int size, String sortBy, boolean asc);
 
+    List<StudyGroup> findAll();
+
     long count(Map<String, Object> filters);
 
     long countByGroupAdminId(Long personId);
+
     long countByShouldBeExpelledGreaterThan(int value);
-    List<StudyGroup> findByGroupAdminLessThan(Long personId);
 }

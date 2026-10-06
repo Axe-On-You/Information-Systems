@@ -12,6 +12,7 @@ const columns = [
     { id: 'name', label: 'Название' },
     { id: 'coordinates.x', label: 'Коорд X' },
     { id: 'coordinates.y', label: 'Коорд Y' },
+    { id: 'creationDate', label: 'Дата создания' },
     { id: 'studentsCount', label: 'Студенты' },
     { id: 'expelledStudents', label: 'Отчислены' },
     { id: 'transferredStudents', label: 'Переведены' },
@@ -51,11 +52,11 @@ const GroupTable = ({ onEdit }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Удалить эту группу?')) {
             try {
-                await api.delete(`/study-groups/${id}`);
+                await api.delete('/study-groups/' + id);
                 dispatch(fetchGroups());
                 alert('Удалено успешно');
             } catch (error) {
-                alert(`Ошибка удаления: ${error.response?.data?.error || error.message}`);
+                alert('Ошибка удаления: ' + (error.response?.data?.error || error.message));
             }
         }
     };
@@ -102,6 +103,7 @@ const GroupTable = ({ onEdit }) => {
                                 <TableCell>{row.name}</TableCell>
                                 <TableCell>{row.coordinates.x}</TableCell>
                                 <TableCell>{row.coordinates.y}</TableCell>
+                                <TableCell>{row.creationDate || '-'}</TableCell>
                                 <TableCell>{row.studentsCount || '-'}</TableCell>
                                 <TableCell>{row.expelledStudents}</TableCell>
                                 <TableCell>{row.transferredStudents || '-'}</TableCell>

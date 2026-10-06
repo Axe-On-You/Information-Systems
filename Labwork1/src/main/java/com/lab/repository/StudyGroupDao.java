@@ -21,8 +21,4 @@ public interface StudyGroupDao {
     List<StudyGroup> findAll();
 
     long count(Map<String, Object> filters);
-
-    long countByGroupAdminId(Long personId);
-
-    long countByShouldBeExpelledGreaterThan(int value);
 }

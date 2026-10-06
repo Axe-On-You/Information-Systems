@@ -21,20 +21,30 @@ public class JpaConfig {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
 
-        String dbUrl = System.getenv("DB_URL") != null
-                ? System.getenv("DB_URL")
-                : "jdbc:postgresql://localhost:5432/studs";
-        String dbUser = System.getenv("DB_USER") != null
-                ? System.getenv("DB_USER")
-                : "postgres";
-        String dbPassword = System.getenv("DB_PASSWORD") != null
-                ? System.getenv("DB_PASSWORD")
-                : "postgres";
+        String dbUrl = System.getenv("DB_URL");
+        if (dbUrl == null || dbUrl.isBlank()) {
+            dbUrl = "jdbc:postgresql://pg:5432/studs";
+        }
+
+        String dbUser = requiredEnvironmentVariable("DB_USER");
+        String dbPassword = requiredEnvironmentVariable("DB_PASSWORD");
 
         dataSource.setUrl(dbUrl);
         dataSource.setUsername(dbUser);
         dataSource.setPassword(dbPassword);
         return dataSource;
+    }
+
+    private String requiredEnvironmentVariable(String name) {
+        String value = System.getenv(name);
+
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(
+                    "Не задана переменная окружения " + name
+            );
+        }
+
+        return value;
     }
 
     @Bean

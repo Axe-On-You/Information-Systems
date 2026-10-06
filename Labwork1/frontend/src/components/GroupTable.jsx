@@ -131,7 +131,14 @@ const GroupTable = ({ onEdit, onView }) => {
                                 <TableCell>{row.name}</TableCell>
                                 <TableCell>{row.coordinates.x}</TableCell>
                                 <TableCell>{row.coordinates.y}</TableCell>
-                                <TableCell>{row.creationDate || '-'}</TableCell>
+                                <TableCell>
+                                    {row.creationDate
+                                        ? new Date(row.creationDate).toLocaleString('ru-RU', {
+                                            dateStyle: 'short',
+                                            timeStyle: 'short',
+                                        })
+                                        : '-'}
+                                </TableCell>
                                 <TableCell>{row.studentsCount ?? '-'}</TableCell>
                                 <TableCell>{row.expelledStudents}</TableCell>
                                 <TableCell>{row.transferredStudents ?? '-'}</TableCell>

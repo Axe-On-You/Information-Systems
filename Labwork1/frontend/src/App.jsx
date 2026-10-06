@@ -5,6 +5,7 @@ import { fetchGroups, fetchPersons, hideNotification } from './store/groupSlice'
 import Header from './components/Header';
 import GroupTable from './components/GroupTable';
 import GroupModal from './components/GroupModal';
+import GroupViewModal from './components/GroupViewModal';
 import PersonModal from './components/PersonModal';
 import PersonListModal from './components/PersonListModal';
 import SpecialOpsPanel from './components/SpecialOpsPanel';
@@ -16,6 +17,7 @@ function App() {
     const [groupModalOpen, setGroupModalOpen] = useState(false);
     const [personModalOpen, setPersonModalOpen] = useState(false);
     const [personListModalOpen, setPersonListModalOpen] = useState(false);
+    const [viewGroupId, setViewGroupId] = useState(null);
     const [editingGroup, setEditingGroup] = useState(null);
 
     useEffect(() => {
@@ -39,6 +41,10 @@ function App() {
         setGroupModalOpen(true);
     };
 
+    const handleViewGroup = (id) => {
+        setViewGroupId(id);
+    };
+
     return (
         <>
             <CssBaseline />
@@ -47,8 +53,12 @@ function App() {
                 onOpenPerson={() => setPersonModalOpen(true)}
                 onOpenPersonList={() => setPersonListModalOpen(true)}
             />
+
             <Container maxWidth="xl">
-                <GroupTable onEdit={handleOpenGroup} />
+                <GroupTable
+                    onEdit={handleOpenGroup}
+                    onView={handleViewGroup}
+                />
                 <SpecialOpsPanel />
             </Container>
 
@@ -56,6 +66,12 @@ function App() {
                 open={groupModalOpen}
                 onClose={() => setGroupModalOpen(false)}
                 editData={editingGroup}
+            />
+
+            <GroupViewModal
+                open={viewGroupId !== null}
+                groupId={viewGroupId}
+                onClose={() => setViewGroupId(null)}
             />
 
             <PersonModal

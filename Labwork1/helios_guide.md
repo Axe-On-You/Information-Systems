@@ -550,12 +550,7 @@ http://localhost:18080/api/study-groups
 
 Адрес backend вынесен в переменную Vite `VITE_API_BASE_URL`, поэтому менять `axios.js` и `App.jsx` вручную при переходе между Docker и Helios не нужно.
 
-В каталоге `frontend` создайте локальный файл окружения:
-
-```bash
-cd ~/Information-Systems/Labwork1/frontend
-cp .env.example .env.local
-```
+В каталоге `Labwork1/frontend` на компьютере, где запускается Vite, создайте локальный файл окружения `.env.local` на основе `.env.example`. Файл `.env.local` не нужно добавлять в Git.
 
 Для локального Docker оставьте:
 

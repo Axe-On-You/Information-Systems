@@ -9,7 +9,8 @@ import {
     setPagination,
     setSorting,
     setFilter,
-    clearAllFilters
+    clearAllFilters,
+    showNotification
 } from '../store/groupSlice';
 import api from '../api/axios';
 
@@ -71,12 +72,16 @@ const GroupTable = ({ onEdit, onView }) => {
         try {
             await api.delete('/study-groups/' + id);
             dispatch(fetchGroups());
-            alert('Удалено успешно');
+            dispatch(showNotification({
+                message: 'Группа успешно удалена',
+                severity: 'success'
+            }));
         } catch (error) {
-            alert(
-                'Ошибка удаления: ' +
-                (error.response?.data?.error || error.message)
-            );
+            dispatch(showNotification({
+                message: 'Ошибка удаления: ' +
+                    (error.response?.data?.error || error.message),
+                severity: 'error'
+            }));
         }
     };
 

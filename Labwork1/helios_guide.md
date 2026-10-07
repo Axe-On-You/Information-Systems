@@ -548,25 +548,41 @@ http://localhost:18080/api/study-groups
 
 ## 16. Настройка frontend
 
-Frontend должен обращаться к backend через адрес, доступный в браузере.
+Адрес backend вынесен в переменную Vite `VITE_API_BASE_URL`, поэтому менять `axios.js` и `App.jsx` вручную при переходе между Docker и Helios не нужно.
 
-При использовании PuTTY-туннеля:
+В каталоге `frontend` создайте локальный файл окружения:
+
+```bash
+cd ~/Information-Systems/Labwork1/frontend
+cp .env.example .env.local
+```
+
+Для локального Docker оставьте:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+Для запуска frontend с backend на Helios укажите:
+
+```env
+VITE_API_BASE_URL=http://localhost:18080/api
+```
+
+После изменения `.env.local` перезапустите Vite:
+
+```bash
+npm run dev
+```
+
+Та же переменная используется и для Axios, и для SSE. Поэтому на Helios оба канала работают через порт `18080`:
 
 ```text
-http://localhost:18080/api
+HTTP API → http://localhost:18080/api
+SSE      → http://localhost:18080/api/stream
 ```
 
-Например, в Axios:
-
-```javascript
-const api = axios.create({
-    baseURL: 'http://localhost:18080/api'
-});
-```
-
-После изменения frontend пересоберите/перезапустите его в соответствии со способом запуска.
-
-Важно: `localhost` в браузере означает Windows-компьютер пользователя. PuTTY перенаправляет запросы:
+Важно: `localhost` в браузере означает Windows-компьютер пользователя. При использовании PuTTY-туннеля запросы идут:
 
 ```text
 Windows localhost:18080
@@ -894,6 +910,12 @@ Connection
 → Destination: localhost:18080
 → Local
 → Add
+```
+
+Перед запуском frontend на Windows создайте `frontend/.env.local` на основе `frontend/.env.example` и установите:
+
+```env
+VITE_API_BASE_URL=http://localhost:18080/api
 ```
 
 Должно быть:

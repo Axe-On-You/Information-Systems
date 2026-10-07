@@ -9,6 +9,7 @@ import GroupViewModal from './components/GroupViewModal';
 import PersonModal from './components/PersonModal';
 import PersonListModal from './components/PersonListModal';
 import SpecialOpsPanel from './components/SpecialOpsPanel';
+import { API_BASE_URL } from './api/axios';
 
 function App() {
     const dispatch = useDispatch();
@@ -21,7 +22,7 @@ function App() {
     const [editingGroup, setEditingGroup] = useState(null);
 
     useEffect(() => {
-        const eventSource = new EventSource('http://localhost:8080/api/stream');
+        const eventSource = new EventSource(`${API_BASE_URL}/stream`);
 
         const handleUpdate = () => {
             dispatch(fetchGroups());

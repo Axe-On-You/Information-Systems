@@ -1,0 +1,1069 @@
+# Развёртывание Labwork1 на Helios
+
+Подробная инструкция по развёртыванию проекта `Labwork1` на сервере Helios без Docker.
+
+## 1. Что используется
+
+На Helios проект запускается по схеме:
+
+```text
+GitHub
+  ↓
+Maven
+  ↓
+WAR-файл
+  ↓
+WildFly
+  ↓
+Spring MVC + EclipseLink
+  ↓
+PostgreSQL (pg:5432/studs)
+```
+
+Используются:
+- Java 17
+- Maven
+- WildFly 41.0.1.Final
+- PostgreSQL на сервере `pg`
+- база `studs`
+- Spring MVC
+- EclipseLink
+- WAR-файл проекта
+
+---
+
+## 2. Подключение к Helios
+
+Подключитесь к серверу по SSH.
+
+Проверьте Java:
+
+```bash
+java -version
+```
+
+Ожидается Java 17, например:
+
+```text
+openjdk version "17.0.12"
+```
+
+Если `JAVA_HOME` не настроен:
+
+```bash
+export JAVA_HOME=/usr/local/openjdk17
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+Чтобы сохранить настройку после повторного входа:
+
+```bash
+echo 'export JAVA_HOME=/usr/local/openjdk17' >> ~/.bashrc
+echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Проверка:
+
+```bash
+echo "$JAVA_HOME"
+java -version
+```
+
+---
+
+## 3. Клонирование репозитория
+
+Перейдите в домашнюю директорию:
+
+```bash
+cd ~
+```
+
+Клонируйте репозиторий:
+
+```bash
+git clone https://github.com/Axe-On-You/Information-Systems.git
+```
+
+Перейдите в проект:
+
+```bash
+cd ~/Information-Systems/Labwork1
+```
+
+Если репозиторий уже был клонирован:
+
+```bash
+cd ~/Information-Systems
+git pull
+cd Labwork1
+```
+
+Проверить состояние:
+
+```bash
+git status
+```
+
+---
+
+## 4. Сборка проекта
+
+Перейдите в директорию проекта:
+
+```bash
+cd ~/Information-Systems/Labwork1
+```
+
+Соберите проект:
+
+```bash
+mvn clean package
+```
+
+В конце должно появиться:
+
+```text
+BUILD SUCCESS
+```
+
+После успешной сборки WAR-файл должен находиться здесь:
+
+```text
+~/Information-Systems/Labwork1/target/study-group-service-1.0-SNAPSHOT.war
+```
+
+Проверить:
+
+```bash
+ls -lh target/*.war
+```
+
+---
+
+## 5. Подключение к PostgreSQL
+
+На Helios PostgreSQL доступен через сервер:
+
+```text
+pg
+```
+
+Параметры:
+
+```text
+Host: pg
+Port: 5432
+Database: studs
+User: ваш логин
+Password: ваш пароль
+```
+
+Проверить подключение:
+
+```bash
+psql -h pg -p 5432 -U <ваш_логин> -d studs
+```
+
+Например:
+
+```bash
+psql -h pg -p 5432 -U s466730 -d studs
+```
+
+Если подключение успешно, появится:
+
+```text
+studs=>
+```
+
+Выйти:
+
+```sql
+\q
+```
+
+---
+
+## 6. Переменные окружения
+
+Приложение не хранит пароль от БД в исходном коде.
+
+Перед запуском WildFly установите:
+
+```bash
+export DB_NAME=studs
+export DB_USER=<ваш_логин>
+export DB_PASSWORD='<ваш_пароль>'
+export DB_URL='jdbc:postgresql://pg:5432/studs'
+```
+
+Проверить безопасные переменные:
+
+```bash
+echo "$DB_NAME"
+echo "$DB_USER"
+echo "$DB_URL"
+```
+
+Пароль через `echo` выводить не нужно.
+
+Не добавляйте настоящий пароль в Git и не коммитьте `.env`.
+
+---
+
+## 7. Установка WildFly
+
+Если собственного WildFly ещё нет:
+
+```bash
+cd ~
+wget https://github.com/wildfly/wildfly/releases/download/41.0.1.Final/wildfly-41.0.1.Final.tar.gz
+```
+
+Распакуйте:
+
+```bash
+tar -xzf wildfly-41.0.1.Final.tar.gz
+mv wildfly-41.0.1.Final wildfly
+```
+
+Проверьте:
+
+```bash
+~/wildfly/bin/standalone.sh --version
+```
+
+Ожидается:
+
+```text
+WildFly Full 41.0.1.Final
+```
+
+### Если `~/wildfly` уже существует
+
+Повторно скачивать WildFly не нужно.
+
+Проверьте:
+
+```bash
+~/wildfly/bin/standalone.sh --version
+```
+
+На Helios могут находиться WildFly других пользователей. Не используйте чужую директорию и не изменяйте её конфигурацию.
+
+Используйте собственный:
+
+```text
+~/wildfly
+```
+
+---
+
+## 8. Важная проблема с памятью WildFly
+
+На Helios может быть установлена переменная `_JAVA_OPTIONS`, ограничивающая память Java.
+
+Проверить:
+
+```bash
+echo "$_JAVA_OPTIONS"
+```
+
+Например:
+
+```text
+-XX:MaxHeapSize=1G -XX:MaxMetaspaceSize=128m
+```
+
+Для WildFly + Spring MVC + EclipseLink + PostgreSQL 128 MB Metaspace может быть недостаточно.
+
+В этом случае WildFly может завершиться с:
+
+```text
+java.lang.OutOfMemoryError: Metaspace
+```
+
+Исправление:
+
+```bash
+export _JAVA_OPTIONS="-XX:MaxHeapSize=1G -XX:MaxMetaspaceSize=256m"
+```
+
+Если проблема остаётся, смотрите:
+
+```bash
+tail -n 100 ~/wildfly/standalone/log/server.log
+```
+
+---
+
+## 9. Подготовка базы данных
+
+В проекте используется:
+
+```java
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+```
+
+Поэтому PostgreSQL должен самостоятельно генерировать `id`.
+
+После создания или пересоздания таблиц проверьте:
+
+```bash
+psql -h pg -p 5432 -U <ваш_логин> -d studs
+```
+
+Затем:
+
+```sql
+\d study_group
+```
+
+У `id` должна быть настроена генерация identity.
+
+Если при создании группы появляется:
+
+```text
+null value in column "id" of relation "study_group" violates not-null constraint
+```
+
+это означает, что PostgreSQL не генерирует `id`.
+
+Исправление:
+
+```sql
+ALTER TABLE study_group
+    ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY;
+```
+
+Проверить:
+
+```sql
+\d study_group
+```
+
+Выйти:
+
+```sql
+\q
+```
+
+### Важно
+
+Эта команда не нужна при каждом запуске WildFly.
+
+Изменение структуры таблицы сохраняется в PostgreSQL. Повторять его нужно только если база или таблица была пересоздана без этой настройки.
+
+---
+
+## 10. Развёртывание WAR в WildFly
+
+Скопируйте собранный WAR:
+
+```bash
+cp ~/Information-Systems/Labwork1/target/study-group-service-1.0-SNAPSHOT.war \
+   ~/wildfly/standalone/deployments/ROOT.war
+```
+
+Имя `ROOT.war` позволяет открыть приложение на корневом URL.
+
+---
+
+## 11. Запуск WildFly
+
+Перейдите в директорию:
+
+```bash
+cd ~/wildfly
+```
+
+Запустите сервер на порту `18080`:
+
+```bash
+./bin/standalone.sh -Djboss.http.port=18080
+```
+
+При успешном запуске в логе появится сообщение примерно:
+
+```text
+WFLYSRV0025: WildFly 41.0.1.Final ... started
+```
+
+Также должен появиться запуск JPA:
+
+```text
+Initialized JPA EntityManagerFactory
+```
+
+---
+
+## 12. Проверка backend на Helios
+
+Откройте второе SSH-подключение к Helios.
+
+Проверить API:
+
+```bash
+curl http://localhost:18080/api/study-groups
+```
+
+При пустой базе:
+
+```json
+{"total":0,"data":[]}
+```
+
+Проверить persons:
+
+```bash
+curl http://localhost:18080/api/persons
+```
+
+Если API возвращает JSON, backend работает.
+
+---
+
+## 13. Как оставить WildFly работать после выхода из SSH
+
+Если сервер запущен в текущем терминале, нажмите:
+
+```text
+Ctrl+Z
+```
+
+Затем:
+
+```bash
+bg
+```
+
+И:
+
+```bash
+disown
+```
+
+Проверить:
+
+```bash
+ps aux | grep standalone
+```
+
+После `disown` WildFly продолжит работать после закрытия SSH-сессии, пока процесс не будет остановлен или сервер не перезагрузится.
+
+---
+
+## 14. Просмотр логов
+
+Основной лог:
+
+```bash
+~/wildfly/standalone/log/server.log
+```
+
+Последние строки:
+
+```bash
+tail -n 100 ~/wildfly/standalone/log/server.log
+```
+
+Следить в реальном времени:
+
+```bash
+tail -f ~/wildfly/standalone/log/server.log
+```
+
+Найти ошибки:
+
+```bash
+grep -n -E "ERROR|Exception|Caused by" \
+    ~/wildfly/standalone/log/server.log | tail -n 30
+```
+
+---
+
+## 15. Подключение к backend с Windows
+
+WildFly на Helios обычно слушает:
+
+```text
+127.0.0.1:18080
+```
+
+Поэтому напрямую из браузера Windows этот порт недоступен.
+
+Нужно создать SSH-туннель.
+
+### PuTTY
+
+Откройте:
+
+```text
+Connection
+→ SSH
+→ Tunnels
+```
+
+В `Source port`:
+
+```text
+18080
+```
+
+В `Destination`:
+
+```text
+localhost:18080
+```
+
+Выберите:
+
+```text
+Local
+```
+
+Нажмите:
+
+```text
+Add
+```
+
+Должно появиться:
+
+```text
+L18080 localhost:18080
+```
+
+После установки SSH-соединения на Windows можно открыть:
+
+```text
+http://localhost:18080/api/study-groups
+```
+
+Если появляется JSON от приложения, туннель работает.
+
+---
+
+## 16. Настройка frontend
+
+Адрес backend вынесен в переменную Vite `VITE_API_BASE_URL`, поэтому менять `axios.js` и `App.jsx` вручную при переходе между Docker и Helios не нужно.
+
+В каталоге `Labwork1/frontend` на компьютере, где запускается Vite, создайте локальный файл окружения `.env.local` на основе `.env.example`. Файл `.env.local` не нужно добавлять в Git.
+
+Для локального Docker оставьте:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+Для запуска frontend с backend на Helios укажите:
+
+```env
+VITE_API_BASE_URL=http://localhost:18080/api
+```
+
+После изменения `.env.local` перезапустите Vite:
+
+```bash
+npm run dev
+```
+
+Та же переменная используется и для Axios, и для SSE. Поэтому на Helios оба канала работают через порт `18080`:
+
+```text
+HTTP API → http://localhost:18080/api
+SSE      → http://localhost:18080/api/stream
+```
+
+Важно: `localhost` в браузере означает Windows-компьютер пользователя. При использовании PuTTY-туннеля запросы идут:
+
+```text
+Windows localhost:18080
+        ↓ SSH tunnel
+Helios localhost:18080
+        ↓
+WildFly
+```
+
+---
+
+## 17. Проверка всей системы
+
+Должна работать цепочка:
+
+```text
+Windows browser
+      ↓
+localhost:18080
+      ↓
+SSH tunnel
+      ↓
+Helios:18080
+      ↓
+WildFly
+      ↓
+Spring MVC
+      ↓
+EclipseLink
+      ↓
+PostgreSQL pg:5432/studs
+```
+
+Проверка backend:
+
+```bash
+curl http://localhost:18080/api/study-groups
+```
+
+Проверка через Windows:
+
+```text
+http://localhost:18080/api/study-groups
+```
+
+Затем проверьте frontend и основные операции:
+- получение списка групп;
+- создание;
+- получение по ID;
+- изменение;
+- удаление;
+- работа с администраторами;
+- специальные операции;
+- автоматическое обновление данных.
+
+---
+
+## 18. Обновление backend после изменения Java-кода
+
+После изменения backend:
+
+### 1. Получить изменения
+
+```bash
+cd ~/Information-Systems
+git pull
+```
+
+### 2. Перейти в проект
+
+```bash
+cd Labwork1
+```
+
+### 3. Собрать WAR
+
+```bash
+mvn clean package
+```
+
+### 4. Заменить WAR
+
+```bash
+cp target/study-group-service-1.0-SNAPSHOT.war \
+   ~/wildfly/standalone/deployments/ROOT.war
+```
+
+WildFly обычно обнаруживает изменение WAR и выполняет redeploy.
+
+Следить:
+
+```bash
+tail -f ~/wildfly/standalone/log/server.log
+```
+
+---
+
+## 19. Если WildFly уже запущен
+
+Проверить:
+
+```bash
+ps aux | grep standalone
+```
+
+Если процесс есть, второй экземпляр на том же порту запускать не нужно.
+
+Достаточно заменить WAR:
+
+```bash
+cp target/study-group-service-1.0-SNAPSHOT.war \
+   ~/wildfly/standalone/deployments/ROOT.war
+```
+
+Если нужен полный перезапуск:
+
+```bash
+ps aux | grep standalone
+kill <PID>
+```
+
+При необходимости:
+
+```bash
+kill -9 <PID>
+```
+
+После этого:
+
+```bash
+cd ~/wildfly
+./bin/standalone.sh -Djboss.http.port=18080
+```
+
+---
+
+## 20. Типичные проблемы
+
+### `mvn: command not found`
+
+Проверить:
+
+```bash
+which mvn
+mvn -version
+```
+
+Настройте Maven в `PATH` или используйте доступную на Helios установку.
+
+### `java: command not found`
+
+Проверить:
+
+```bash
+echo "$JAVA_HOME"
+```
+
+Установить:
+
+```bash
+export JAVA_HOME=/usr/local/openjdk17
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+### WildFly падает с `OutOfMemoryError: Metaspace`
+
+Проверить:
+
+```bash
+echo "$_JAVA_OPTIONS"
+```
+
+Увеличить:
+
+```bash
+export _JAVA_OPTIONS="-XX:MaxHeapSize=1G -XX:MaxMetaspaceSize=256m"
+```
+
+После этого перезапустить WildFly.
+
+### Ошибка подключения к PostgreSQL
+
+Проверить напрямую:
+
+```bash
+psql -h pg -p 5432 -U <ваш_логин> -d studs
+```
+
+Если `psql` не подключается, проблема в доступе к БД или параметрах подключения.
+
+Параметры должны быть:
+
+```text
+DB_URL=jdbc:postgresql://pg:5432/studs
+DB_USER=<ваш логин>
+DB_PASSWORD=<ваш пароль>
+```
+
+### `null value in column "id" of relation "study_group"`
+
+Проверить:
+
+```sql
+\d study_group
+```
+
+Если `id` не имеет identity/default:
+
+```sql
+ALTER TABLE study_group
+    ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY;
+```
+
+### `404` при обращении к API
+
+Правильные endpoints имеют префикс:
+
+```text
+/api
+```
+
+Например:
+
+```text
+/api/study-groups
+/api/persons
+```
+
+Проверить:
+
+```bash
+curl http://localhost:18080/api/study-groups
+```
+
+### Browser не открывает `localhost:18080`
+
+Проверьте:
+
+1. WildFly работает:
+```bash
+ps aux | grep standalone
+```
+
+2. WildFly отвечает на Helios:
+```bash
+curl http://localhost:18080/api/study-groups
+```
+
+3. В PuTTY есть:
+```text
+L18080 localhost:18080
+```
+
+Если первые два пункта работают, проблема, скорее всего, в SSH-туннеле.
+
+### Frontend получает `Network Error`
+
+Проверьте Axios:
+
+```text
+http://localhost:18080/api
+```
+
+Также убедитесь, что SSH-соединение с туннелем всё ещё открыто.
+
+---
+
+## 21. Полная последовательность запуска после первоначальной настройки
+
+После первоначальной настройки обычный запуск выглядит так.
+
+### На Helios
+
+```bash
+cd ~/Information-Systems
+git pull
+
+cd Labwork1
+mvn clean package
+
+export JAVA_HOME=/usr/local/openjdk17
+export PATH="$JAVA_HOME/bin:$PATH"
+
+export DB_NAME=studs
+export DB_USER=<ваш_логин>
+export DB_PASSWORD='<ваш_пароль>'
+export DB_URL='jdbc:postgresql://pg:5432/studs'
+
+export _JAVA_OPTIONS="-XX:MaxHeapSize=1G -XX:MaxMetaspaceSize=256m"
+
+cp target/study-group-service-1.0-SNAPSHOT.war \
+   ~/wildfly/standalone/deployments/ROOT.war
+```
+
+Если WildFly ещё не запущен:
+
+```bash
+cd ~/wildfly
+./bin/standalone.sh -Djboss.http.port=18080
+```
+
+Проверить:
+
+```bash
+curl http://localhost:18080/api/study-groups
+```
+
+При необходимости отправить в background:
+
+```text
+Ctrl+Z
+bg
+disown
+```
+
+### На Windows
+
+В PuTTY:
+
+```text
+Connection
+→ SSH
+→ Tunnels
+→ Source port: 18080
+→ Destination: localhost:18080
+→ Local
+→ Add
+```
+
+Перед запуском frontend на Windows создайте `frontend/.env.local` на основе `frontend/.env.example` и установите:
+
+```env
+VITE_API_BASE_URL=http://localhost:18080/api
+```
+
+Должно быть:
+
+```text
+L18080 localhost:18080
+```
+
+После подключения открыть:
+
+```text
+http://localhost:18080/api/study-groups
+```
+
+Затем запустить frontend.
+
+---
+
+## 22. Безопасность
+
+Не храните реальные пароли в:
+- `application.properties`;
+- `JpaConfig.java`;
+- `docker-compose.yml`;
+- `.env.example`;
+- README;
+- GitHub.
+
+Используйте переменные окружения:
+
+```bash
+export DB_USER=<ваш_логин>
+export DB_PASSWORD='<ваш_пароль>'
+```
+
+Файл `.env` не должен попадать в Git.
+
+Если настоящий пароль когда-либо был опубликован в Git-истории, одного удаления из последнего коммита недостаточно. Пароль необходимо сменить/ротировать.
+
+---
+
+## 23. Полезные команды
+
+### Java
+
+```bash
+java -version
+echo "$JAVA_HOME"
+```
+
+### Maven
+
+```bash
+mvn -version
+mvn clean package
+```
+
+### Git
+
+```bash
+git status
+git pull
+```
+
+### PostgreSQL
+
+```bash
+psql -h pg -p 5432 -U <логин> -d studs
+```
+
+### WildFly
+
+```bash
+~/wildfly/bin/standalone.sh --version
+```
+
+### Проверка процесса
+
+```bash
+ps aux | grep standalone
+```
+
+### API
+
+```bash
+curl http://localhost:18080/api/study-groups
+curl http://localhost:18080/api/persons
+```
+
+### Логи
+
+```bash
+tail -n 100 ~/wildfly/standalone/log/server.log
+tail -f ~/wildfly/standalone/log/server.log
+```
+
+### Поиск ошибок
+
+```bash
+grep -n -E "ERROR|Exception|Caused by" \
+    ~/wildfly/standalone/log/server.log | tail -n 30
+```
+
+---
+
+## 24. Итоговая структура на Helios
+
+После настройки в домашней директории будут примерно такие объекты:
+
+```text
+~
+├── Information-Systems/
+│   └── Labwork1/
+│       ├── src/
+│       ├── frontend/
+│       ├── pom.xml
+│       └── target/
+│           └── study-group-service-1.0-SNAPSHOT.war
+│
+└── wildfly/
+    ├── bin/
+    ├── standalone/
+    │   ├── deployments/
+    │   │   └── ROOT.war
+    │   └── log/
+    │       └── server.log
+    └── ...
+```
+
+В результате backend работает на:
+
+```text
+Helios localhost:18080
+```
+
+С Windows доступ к нему осуществляется через SSH-туннель:
+
+```text
+Windows localhost:18080
+        ↓
+      SSH
+        ↓
+Helios localhost:18080
+```
+
+PostgreSQL находится на:
+
+```text
+pg:5432/studs
+```
+
+А приложение подключается к нему через:
+
+```text
+jdbc:postgresql://pg:5432/studs
+```
